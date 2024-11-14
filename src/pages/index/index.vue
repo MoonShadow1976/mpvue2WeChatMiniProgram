@@ -12,9 +12,15 @@
     <!-- 地图容器 -->
     <div id="map" class="map-container">
       <!-- 地图内容：使用微信小程序的腾讯地图api -->
-      <map id="TXmap" :longitude="longitude" :latitude="latitude" :scale="scale" markers="markers"
-        bindmarkertap="markertap" bindregionchange="regionchange" show-location
-        style="width: 100%; height: 100%;"></map>
+      <map
+        id="TXmap"
+        :longitude="longitude"
+        :latitude="latitude"
+        scale="18"
+        show-location
+        style="width: 100%; height: 100vh;"
+        @regionchange="regionchange">
+      </map>
     </div>
 
     <!-- 定位和缩放按钮 -->
@@ -48,9 +54,9 @@ import card from '@/components/card'
 export default {
   data () {
     return {
-      longitude: '116.397428',
-      latitude: '39.90923',
-      scale: '14',
+      longitude: 0, // 初始经度
+      latitude: 0, // 初始纬度
+      scale: 5, // 地图缩放级别
       motto: 'MapServer',
       userInfo: {
         nickName: 'mpvue',
@@ -76,26 +82,53 @@ export default {
       console.log('clickHandle:', ev)
       // throw {message: 'custom test'}
     },
+    initMap () {
+      this.mapCtx = wx.createMapContext('TXmap', this)
+    },
+    getCenterLocation () {
+      this.mapCtx.getCenterLocation({
+        success: (res) => {
+          console.log(res.latitude)
+          console.log(res.longitude)
+        }
+      })
+    },
     locateUser () {
       // 实现定位用户坐标的功能
       wx.getLocation({
-        type: 'wgs84',
+        type: 'gcj02 ',
         success (res) {
           this.latitude = res.latitude
           this.longitude = res.longitude
           console.log('坐标：', this.latitude, this.longitude)
+          // 使用 wx.createMapContext 获取 map 上下文
+          const mapCtx = wx.createMapContext('TXmap')
           // 使用获取到的经纬度更新地图位置
+          mapCtx.moveToLocation({
+            latitude: this.latitude,
+            longitude: this.longitude
+          })
+        },
+        fail () {
+          console.log('定位失败')
         }
       })
     },
     zoomIn () {
       // 实现地图放大的功能
-      this.scale = this.scale + 1
-      console.log('缩放:', this.scale)
+      this.scale += 1
+      this.mapCtx = wx.createMapContext('TXmap', this)
+      this.mapCtx.scaleTo(this.scale)
     },
     zoomOut () {
       // 实现地图缩小的功能
       this.scale = this.scale - 1
+      // 使用 wx.createMapContext 获取 map 上下文
+      const mapCtx = wx.createMapContext('TXmap')
+      // 使用获取到的经纬度更新地图位置
+      mapCtx.moveToLocation({
+        scale: this.scale
+      })
       console.log('缩放:', this.scale)
     }
   },
